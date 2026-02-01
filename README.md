@@ -114,3 +114,80 @@ docker run -d \
   nginx
 ```
 Prevents container from modifying the data.
+### Clean up unused volumes
+Remove unused volumes:
+`docker volume prune`
+> ⚠️ This deletes all unused volumes.
+
+
+---
+## Docker Network
+In the world of Docker, **Networking** is the system that allows containers to talk to each other, to the host machine, and to the outside world (the internet).
+
+Without a network, a container is an isolated island. With a network, it becomes part of a distributed architecture.
+
+Think of it as a virtual network layer created by Docker, similar to how networks connect physical machines.
+
+It provides each container with its own isolated network environment (IP address, interfaces, routing) and enables secure, controlled communication between containers and external services.
+ 
+---
+
+### How Docker networking works (conceptually)
+- Each container gets
+  - An IP address
+  - A virtual network interface
+- Docker creates virtual networks on the host
+- Containers attached to the same network can communicate directly
+```
+Web Container  ---->  DB Container
+     (same Docker network)
+```
+
+Docker uses Network Drivers to manage how containers communicate. When you install Docker, it automatically creates three default networks: **Bridge**, **Host**, and **None**.
+|Driver|Behavior|Best Use Case|
+| :--- | :--- | :--- |
+|Bridge|The default. Creates a private internal network on the host. Containers get their own IP addresses but are isolated from the host's physical network.|Standard standalone containers.|
+|Host|Removes isolation. The container shares the host’s IP and port space directly.|High-performance apps where network overhead must be zero.|
+|None|Complete isolation. The container has no external network interface.|High-security tasks or batch processing that requires no network.|
+|Overlay|Connects multiple Docker daemons (hosts) together.|Docker Swarm or multi-host clusters.|
+|Macvlan|Assigns a real IP from your local networ. Containers appear as physical devices on the network| .. |
+
+### Key Concept: DNS & Service Discovery
+One of the best features of **User-Defined Bridge Networks** is built-in DNS.
+
+If you create a custom network and attach two containers named `web` and `database`, the web container doesn't need to know the IP address of the database. It can simply reach it by typing: `ping database`
+
+Docker's internal DNS resolver handles the translation automatically. This is much more reliable than hardcoding IP addresses, which change every time a container restarts.
+
+### Common CLI Commands
+You manage networks similarly to how you manage volumes:
+* **Create a network**: `docker network create my_app_net`
+* **Run a container on a specific network**: `docker run -d --name db --network my_app_net mysql`
+* **Connect an already running container to a network**: `docker network connect my_app_net existing_container`
+* **List all networks**: `docker network ls`
+
+| Task                     | Command                                          |
+| ------------------------ | ------------------------------------------------ |
+| List networks            | `docker network ls`                              |
+| Create network           | `docker network create my_network`               |
+| Inspect network          | `docker network inspect my_network`              |
+| Remove network           | `docker network rm my_network`                   |
+| Clean unused             | `docker network prune`                           |
+| Run container on network | `docker run --network my_network image`          |
+| Connect container        | `docker network connect my_network container`    |
+| Disconnect container     | `docker network disconnect my_network container` |
+
+
+### Port Mapping (The Gateway)
+Even if a container is on a network, it is blocked from the internet by default for security. To make a web server inside a container accessible to your browser, you use Port Mapping with the `-p` flag:
+
+`docker run -p 8080:80 nginx`
+
+> This tells Docker: "Take any traffic hitting the host at port 8080 and forward it to port 80 inside this container."
+
+### Key benefits of Docker networks
+- Automatic DNS (use container names)
+- Isolation between applications
+- Secure communication
+- Easy scaling
+- Port conflict avoidance
