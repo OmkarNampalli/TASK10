@@ -1,0 +1,2 @@
+use the following command to run mysql container:
+docker run -d --name mysql --network my_network -e MYSQL_ROOT_PASSWORD=rootpassword -e MYSQL_DE=test_db mysql:8
